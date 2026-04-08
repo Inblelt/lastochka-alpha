@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>ЛАСТОЧКА</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>ЛАСТОЧКА</h1>
+    <hr>
+
+    <div id="auth-box">
+        <h3>Вход в систему</h3>
+        Введите ваш ID: <input type="text" id="my-id-input" placeholder="Например, 777">
+        <button onclick="login()">Войти</button>
+    </div>
+
+    <div id="main-ui" style="display:none;">
+        <p>Ваш ID: <b id="display-id"></b></p>
+        <button onclick="location.reload()">Выйти</button>
+        <hr>
+
+        <h3>Начать чат</h3>
+        ID собеседника: <input type="text" id="target-id-input" placeholder="Например, 888">
+        <button onclick="startChat()">Открыть чат</button>
+
+        <div id="chat-window" style="display:none;">
+            <h4 id="chat-title"></h4>
+            <div id="messages-list" style="border: 1px solid #000; height: 300px; overflow-y: scroll; padding: 10px;">
+                </div>
+            <br>
+            <input type="text" id="msg-input" placeholder="Напишите сообщение...">
+            <button onclick="sendMessage()">Отправить</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // Твои данные из промпта
+        const SUPABASE_URL = 'https://xjekyaiyfvtjtkinlmbv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Nne-WFtskhN6oEkYkgtWhA_KHo2W8YC'; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let myId, targetId, currentChatId;
+
+        function login() {
+            myId = document.getElementById('my-id-input').value;
+            if (!myId) return alert("Введите ID");
+            
+            document.getElementById('auth-box').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'block';
+            document.getElementById('display-id').innerText = myId;
+        }
+
+        async function startChat() {
+            targetId = document.getElementById('target-id-input').value;
+            if (!targetId || targetId === myId) return alert("Неверный ID");
+
+            // Создаем уникальный ID чата (сортируем, чтобы у обоих был одинаковый)
+            currentChatId = [myId, targetId].sort().join("_");
+            
+            document.getElementById('chat-window').style.display = 'block';
+            document.getElementById('chat-title').innerText = "Чат с: " + targetId;
+            
+            loadMessages();
+            subscribeToMessages();
+        }
+
+        async function loadMessages() {
+            const { data, error } = await _supabase
+                .from('messages')
+                .select('*')
+                .eq('chat_id', currentChatId)
+                .order('created_at', { ascending: true });
+
+            if (data) {
+                renderMessages(data);
+            }
+        }
+
+        function renderMessages(messages) {
+            const list = document.getElementById('messages-list');
+            list.innerHTML = '';
+            messages.forEach(m => {
+                const sender = m.sender_id === myId ? "Вы" : "ID " + m.sender_id;
+                list.innerHTML += `<p><b>${sender}:</b> ${m.text}</p>`;
+            });
+            list.scrollTop = list.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = document.getElementById('msg-input').value;
+            if (!text) return;
+
+            const { error } = await _supabase
+                .from('messages')
+                .insert([{ 
+                    sender_id: myId, 
+                    receiver_id: targetId, 
+                    text: text, 
+                    chat_id: currentChatId 
+                }]);
+
+            if (error) console.error(error);
+            document.getElementById('msg-input').value = '';
+        }
+
+        // Realtime: слушаем новые сообщения
+        function subscribeToMessages() {
+            _supabase
+                .channel('public:messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${currentChatId}` }, 
+                payload => {
+                    loadMessages(); // Перезагружаем при получении нового
+                })
+                .subscribe();
+        }
+    </script>
+</body>
+</html>
