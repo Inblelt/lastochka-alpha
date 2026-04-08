@@ -4,9 +4,9 @@
     <title>ЛАСТОЧКА</title>
     <meta charset="UTF-8">
     <style>
-        /* СТИЛЬ 2010-х */
+        /* CSS ОСТАВЛЕН БЕЗ ИЗМЕНЕНИЙ, КАК ТЫ И ПРОСИЛ */
         body {
-            background-color: #ECE9D8; /* Классический цвет Windows XP/7 */
+            background-color: #ECE9D8; 
             font-family: Tahoma, Arial, sans-serif;
             font-size: 12px;
             margin: 20px;
@@ -74,12 +74,12 @@
 </head>
 <body>
 
-    <h1>ЛАСТОЧКА</h1>
+    <h1>ЛАСТОЧКА v1.1</h1>
     <hr>
 
     <div id="auth-box">
-        <strong>Вход в мессенджер</strong>
-        <p>Ваш случайный ID: <b id="generated-id" style="color: green; font-size: 16px;"></b></p>
+        <strong>Вход в систему</strong>
+        <p>Ваш ID: <input type="number" id="my-id-input" placeholder="Напр. 555"></p>
         <button onclick="login()">Подключиться</button>
     </div>
 
@@ -93,7 +93,7 @@
 
         <strong>Найти собеседника:</strong><br>
         <input type="number" id="target-id-input" placeholder="Введите ID">
-        <button onclick="startChat()">Добавить/Чат</button>
+        <button onclick="startChat()">Открыть чат</button>
 
         <div id="chat-window" style="display:none;">
             <div style="background: #7EA4D0; color: white; padding: 5px; font-weight: bold;" id="chat-title"></div>
@@ -114,11 +114,12 @@
 
         let myId, targetId, currentChatId;
 
-        const randomID = Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('generated-id').innerText = randomID;
-
+        // Вход по введенному ID
         function login() {
-            myId = randomID.toString();
+            const inputId = document.getElementById('my-id-input').value;
+            if (!inputId) return alert("Пожалуйста, введите ваш ID");
+            
+            myId = inputId.toString();
             document.getElementById('auth-box').style.display = 'none';
             document.getElementById('main-ui').style.display = 'block';
             document.getElementById('display-id').innerText = myId;
@@ -126,7 +127,7 @@
 
         async function startChat() {
             targetId = document.getElementById('target-id-input').value;
-            if (!targetId || targetId === myId) return alert("Введите ID собеседника");
+            if (!targetId || targetId === myId) return alert("Введите корректный ID собеседника");
 
             currentChatId = [myId, targetId].sort().join("_");
             
@@ -180,7 +181,8 @@
                 }]);
 
             if (error) {
-                alert("Ошибка! Проверьте SQL-политики в Supabase.");
+                alert("Ошибка отправки! Проверьте SQL-политики в Supabase.");
+                console.error(error);
             } else {
                 loadMessages(); 
             }
@@ -192,7 +194,7 @@
 
         function subscribeToMessages() {
             _supabase
-                .channel('chat_v1')
+                .channel('chat_channel')
                 .on('postgres_changes', { 
                     event: 'INSERT', 
                     schema: 'public', 
