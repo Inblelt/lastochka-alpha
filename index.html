@@ -1,147 +1,268 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <title>ЛАСТОЧКА</title>
+    <title>ЛАСТОЧКА v2.3.0</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        /* Тот же CSS в стиле 2010-х, адаптированный под мобилки */
-        body { background-color: #ECE9D8; font-family: Tahoma, Arial, sans-serif; font-size: 14px; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        body { background-color: #ECE9D8; font-family: Tahoma, sans-serif; font-size: 13px; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         h1 { color: #2D5082; font-size: 20px; margin: 10px; text-shadow: 1px 1px #fff; text-align: center; }
-        #auth-box, #main-ui { background: #F4F4F4; flex: 1; display: flex; flex-direction: column; padding: 15px; }
-        .card { border: 1px solid #7EA4D0; background: #fff; padding: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; }
-        button { background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 100%); border: 1px solid #707070; border-radius: 3px; padding: 10px; cursor: pointer; font-weight: bold; }
-        input { border: 1px solid #7EA4D0; padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
-        #messages-list { background: white; border: 1px solid #7EA4D0; flex: 1; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
-        .msg-line { margin: 5px 0; padding-bottom: 3px; border-bottom: 1px dotted #ccc; }
-        .sender-me { color: #0000FF; font-weight: bold; }
-        .sender-he { color: #FF0000; font-weight: bold; }
-        .bottom-controls { display: flex; gap: 5px; background: #eee; padding: 5px; border-top: 1px solid #ccc; }
-        hr { border: 0; border-top: 1px solid #7EA4D0; margin: 10px 0; }
+        
+        #auth-box, #main-ui { background: #F4F4F4; flex: 1; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; }
+        .card { border: 1px solid #7EA4D0; background: #fff; padding: 10px; box-shadow: 2px 2px 0px rgba(0,0,0,0.05); margin-bottom: 10px; }
+        
+        button { background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 100%); border: 1px solid #707070; border-radius: 3px; padding: 6px; cursor: pointer; font-weight: bold; }
+        input { border: 1px solid #7EA4D0; padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+
+        #messages-list { background: white; border: 1px solid #7EA4D0; overflow-y: auto; padding: 10px; flex: 1; }
+        .msg-line { margin: 8px 0; padding-bottom: 4px; border-bottom: 1px dotted #ccc; word-wrap: break-word; }
+        .chat-img { max-width: 90%; max-height: 200px; display: block; margin-top: 5px; border: 1px solid #7EA4D0; }
+
+        .profile-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #2D5082; object-fit: cover; background: #ddd; }
+        .group-item, .user-search-item { padding: 8px; border: 1px solid #ccc; margin-bottom: 4px; cursor: pointer; background: #fff; border-left: 5px solid #7EA4D0; display: flex; align-items: center; gap: 10px; }
+        .user-search-item:hover { background: #E0F0FF; }
+
+        #notify-box { background: #FFF9C4; border: 2px solid #FBC02D; padding: 8px; margin-bottom: 10px; display: none; cursor: pointer; }
+
+        /* ЧЕТЫРЕХКОЛОНОЧНЫЙ ПК-РЕЖИМ */
+        body.pc-mode { align-items: center; background-color: #FFFFFF; overflow: auto; }
+        body.pc-mode #main-ui { width: 1200px; height: 750px; flex-direction: row; gap: 10px; box-shadow: 0px 5px 20px rgba(0,0,0,0.1); margin-top: 20px; border: 1px solid #7EA4D0; flex: none; }
+        
+        .column { display: none; flex-direction: column; border: 1px solid #D4D0C8; padding: 5px; background: #F0F0F0; }
+        #col-left { flex: 1.2; max-width: 250px; }
+        #col-main { flex: 2; min-width: 350px; }
+        #col-users { flex: 1.5; max-width: 280px; }
+        #col-news { flex: 1.2; max-width: 250px; }
+
+        body.pc-mode .column { display: flex; }
+        body.pc-mode #home-screen, body.pc-mode #chat-window { flex: 1; display: flex; flex-direction: column; }
+
+        .footer-bar { position: fixed; bottom: 0; width: 100%; text-align: center; padding: 5px; background: rgba(255,255,255,0.5); }
+        .btn-stealth { background: none; border: none; color: #ccc; font-size: 9px; cursor: pointer; }
+        
+        .scroll-area { flex: 1; overflow-y: auto; background: white; border: 1px solid #7EA4D0; padding: 5px; }
     </style>
 </head>
-<body>
+<body class="mobile-mode">
 
-    <h1>ЛАСТОЧКА</h1>
+    <h1>ЛАСТОЧКА v2.3.0</h1>
 
     <div id="auth-box">
         <div class="card">
-            <strong>Вход в систему</strong>
-            <input type="number" id="my-id-input" placeholder="Ваш ID (напр. 555)">
-            <input type="password" id="my-pass-input" placeholder="Ваш пароль">
-            
-            <div style="display:flex; gap: 10px; margin-top: 10px;">
-                <button onclick="handleAuth('login')" style="flex: 1;">ВОЙТИ</button>
-                <button onclick="handleAuth('reg')" style="flex: 1; color: #555;">РЕГИСТРАЦИЯ</button>
-            </div>
-            <p style="font-size: 10px; color: #666; margin-top: 10px;">* Если вы заходите впервые, сначала нажмите "Регистрация"</p>
+            <strong>Вход / Регистрация</strong>
+            <input type="number" id="my-id-input" placeholder="ID">
+            <input type="text" id="my-nick-input" placeholder="Ник">
+            <input type="password" id="my-pass-input" placeholder="Пароль">
+            <input type="text" id="my-avatar-input" placeholder="URL аватара">
+            <button onclick="handleAuth('login')" style="width:100%; margin-top:5px;">ВОЙТИ</button>
+            <button onclick="handleAuth('reg')" style="width:100%; margin-top:5px;">РЕГИСТРАЦИЯ</button>
         </div>
     </div>
 
     <div id="main-ui" style="display:none;">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <span>ID: <b id="display-id" style="color: #2D5082;"></b></span>
-            <button onclick="location.reload()" style="padding: 3px 8px;">Выход</button>
-        </div>
-        <hr>
-
-        <div id="chat-selector">
-            <strong>Кому написать:</strong>
-            <input type="number" id="target-id-input" placeholder="ID собеседника">
-            <button onclick="startChat()" style="width:100%; margin-top: 5px;">ОТКРЫТЬ ДИАЛОГ</button>
-        </div>
-
-        <div id="chat-window" style="display:none; flex: 1; flex-direction: column; margin-top:10px;">
-            <div style="background: #7EA4D0; color: white; padding: 5px; font-size: 12px; font-weight: bold;" id="chat-title"></div>
-            <div id="messages-list"></div>
-            <div class="bottom-controls">
-                <input type="text" id="msg-input" placeholder="Сообщение..." style="flex: 1;">
-                <button onclick="sendMessage()">➤</button>
+        
+        <div class="column" id="col-left">
+            <div class="card" style="display:flex; align-items:center; gap:8px; padding:5px;">
+                <img id="my-avatar-img" src="" style="width:40px; height:40px; border-radius:50%; border:1px solid #2D5082;">
+                <div><b id="display-nick" style="font-size:11px;"></b><br><small>ID: <span id="display-id"></span></small></div>
             </div>
+            <strong>Чаты:</strong>
+            <div id="groups-list" class="scroll-area"></div>
+            <button onclick="createGroup()" style="margin-top:5px; font-size:10px;">+ ГРУППА</button>
+        </div>
+
+        <div class="column" id="col-main">
+            <div id="home-screen" class="card" style="flex:1;">
+                <div id="notify-box" onclick="this.style.display='none'">
+                    <strong>🔔 Сообщение!</strong><br><span id="notify-text"></span>
+                </div>
+                <h3 style="margin-top:0;">Ласточка Home</h3>
+                <p>Выбери друга справа или группу слева.</p>
+                <button onclick="location.reload()" style="margin-top:auto;">ВЫХОД</button>
+            </div>
+
+            <div id="chat-window" style="display:none; flex:1; flex-direction:column;">
+                <div id="chat-title" style="background:#7EA4D0; color:white; padding:5px; font-weight:bold;"></div>
+                <div id="messages-list"></div>
+                <div style="display:flex; gap:3px; margin-top:5px;">
+                    <input type="text" id="msg-input" placeholder="Текст...">
+                    <button onclick="sendMessage()" style="width:40px;">➤</button>
+                </div>
+                <button onclick="backToHome()" style="margin-top:5px; font-size:10px;">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+
+        <div class="column" id="col-users">
+            <strong>🔍 ПОИСК ДРУЗЕЙ:</strong>
+            <div id="users-list" class="scroll-area" style="margin-top:5px;">
+                Загрузка...
+            </div>
+            <button onclick="loadUsers()" style="margin-top:5px; font-size:9px;">ОБНОВИТЬ СПИСОК</button>
+        </div>
+
+        <div class="column" id="col-news">
+            <strong>⚡ СОБЫТИЯ:</strong>
+            <div id="news-feed" class="scroll-area" style="margin-top:5px; font-size:11px;"></div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="footer-bar">
+        <button onclick="toggleView()" class="btn-stealth">[ Переключить ПК/Моб ]</button>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://xjekyaiyfvtjtkinlmbv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Nne-WFtskhN6oEkYkgtWhA_KHo2W8YC'; 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let myId, targetId, currentChatId;
+        let myId, myNick, currentChatId, myAvatarUrl = "";
+        let globalChannel;
 
-        // Обработка входа и регистрации
+        function toggleView() { document.body.classList.toggle('pc-mode'); }
+        function isImageUrl(url) { return (url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null); }
+
         async function handleAuth(mode) {
             const id = document.getElementById('my-id-input').value;
             const pass = document.getElementById('my-pass-input').value;
-            if (!id || !pass) return alert("Введите и ID, и пароль!");
+            const nick = document.getElementById('my-nick-input').value;
+            const avatar = document.getElementById('my-avatar-input').value || "https://robohash.org/" + id;
 
             if (mode === 'reg') {
-                // Пытаемся создать пользователя
-                const { error } = await _supabase.from('users').insert([{ id_number: id, password: pass }]);
-                if (error) {
-                    alert("Ошибка: этот ID уже занят или база недоступна.");
-                } else {
-                    alert("Регистрация завершена! Теперь нажмите 'Войти'.");
-                }
+                await _supabase.from('users').insert([{ id_number: id, password: pass, nickname: nick, avatar_url: avatar }]);
+                handleAuth('login');
             } else {
-                // Проверяем пароль
-                const { data, error } = await _supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id_number', id)
-                    .eq('password', pass)
-                    .single();
-
-                if (data) {
-                    myId = id;
-                    document.getElementById('auth-box').style.display = 'none';
-                    document.getElementById('main-ui').style.display = 'flex';
-                    document.getElementById('display-id').innerText = myId;
-                } else {
-                    alert("Неверный пароль или ID не существует.");
-                }
+                const { data } = await _supabase.from('users').select('*').eq('id_number', id).eq('password', pass).single();
+                if (data) { myId = id; myNick = data.nickname; myAvatarUrl = data.avatar_url; enterApp(); }
             }
         }
 
-        async function startChat() {
-            targetId = document.getElementById('target-id-input').value;
-            if (!targetId || targetId === myId) return alert("Введите ID собеседника");
+        function enterApp() {
+            document.getElementById('auth-box').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'flex';
+            document.getElementById('display-nick').innerText = myNick;
+            document.getElementById('display-id').innerText = myId;
+            document.getElementById('my-avatar-img').src = myAvatarUrl;
+            loadGroups();
+            loadNews();
+            loadUsers(); // Загружаем список пользователей
+            initRealtime(); 
+        }
 
+        // --- НОВАЯ ФУНКЦИЯ: ЗАГРУЗКА ВСЕХ ПОЛЬЗОВАТЕЛЕЙ ---
+        async function loadUsers() {
+            const listEl = document.getElementById('users-list');
+            const { data, error } = await _supabase.from('users').select('id_number, nickname, avatar_url').limit(50);
+            
+            if (data) {
+                listEl.innerHTML = data
+                    .filter(u => u.id_number != myId) // Не показываем самих себя
+                    .map(u => `
+                    <div class="user-search-item" onclick="openPrivate('${u.id_number}', '${u.nickname}')">
+                        <img src="${u.avatar_url}" style="width:30px; height:30px; border-radius:50%;">
+                        <div>
+                            <b>${u.nickname}</b><br>
+                            <small>ID: ${u.id_number}</small>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function openPrivate(targetId, targetNick) {
             currentChatId = [myId, targetId].sort().join("_");
+            document.getElementById('chat-title').innerText = "Чат с " + targetNick + " (" + targetId + ")";
+            document.getElementById('home-screen').style.display = 'none';
             document.getElementById('chat-window').style.display = 'flex';
-            document.getElementById('chat-title').innerText = "Диалог с [" + targetId + "]";
             loadMessages();
-            subscribe();
+        }
+
+        function initRealtime() {
+            if (globalChannel) _supabase.removeChannel(globalChannel);
+            globalChannel = _supabase.channel('db-changes')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                const msg = payload.new;
+                if (msg.sender_id !== myId) {
+                    if (msg.chat_id === currentChatId) loadMessages();
+                    else if (msg.chat_id.includes(myId)) showNotify(msg.sender_id, msg.text || "[Картинка]");
+                    loadNews();
+                }
+            }).subscribe();
+        }
+
+        function showNotify(sender, text) {
+            const box = document.getElementById('notify-box');
+            document.getElementById('notify-text').innerText = `От ID ${sender}: ${text.substring(0, 30)}`;
+            box.style.display = 'block';
+        }
+
+        async function loadNews() {
+            const newsEl = document.getElementById('news-feed');
+            const { data: msgs } = await _supabase.from('messages').select('sender_id, text, chat_id').order('created_at', {ascending:false}).limit(10);
+            if(msgs) {
+                newsEl.innerHTML = msgs.filter(m => m.chat_id.startsWith('group_')).map(m => `
+                    <div style="margin-bottom:5px; border-bottom:1px solid #eee">
+                        <b>${m.sender_id}:</b> ${m.text ? m.text.substring(0,25) : "[Фото]"}
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadGroups() {
+            const { data } = await _supabase.from('groups').select('*').order('created_at', { ascending: false });
+            document.getElementById('groups-list').innerHTML = data.map(g => `<div class="group-item" onclick="startChat('group', '${g.id}', '${g.name}')">${g.name}</div>`).join('');
+        }
+
+        function startChat(type, gId, gName) {
+            document.getElementById('notify-box').style.display = 'none';
+            if (type === 'private') {
+                const t = document.getElementById('target-id-input').value;
+                if(!t) return;
+                openPrivate(t, "ID " + t);
+            } else {
+                currentChatId = "group_" + gId;
+                document.getElementById('chat-title').innerText = "Группа: " + gName;
+                document.getElementById('home-screen').style.display = 'none';
+                document.getElementById('chat-window').style.display = 'flex';
+                loadMessages();
+            }
+        }
+
+        function backToHome() { 
+            currentChatId = null;
+            document.getElementById('home-screen').style.display = 'block'; 
+            document.getElementById('chat-window').style.display = 'none'; 
         }
 
         async function loadMessages() {
+            if(!currentChatId) return;
             const { data } = await _supabase.from('messages').select('*').eq('chat_id', currentChatId).order('created_at', { ascending: true });
             if (data) {
                 const list = document.getElementById('messages-list');
                 list.innerHTML = data.map(m => {
-                    const isMe = m.sender_id == myId;
-                    return `<div class="msg-line"><span class="${isMe ? 'sender-me' : 'sender-he'}">${isMe ? 'Вы' : 'ID '+m.sender_id}:</span> ${m.text}</div>`;
+                    let img = m.url_image ? `<br><img src="${m.url_image}" class="chat-img">` : "";
+                    return `<div class="msg-line"><b>${m.sender_id}:</b> ${m.text || ""} ${img}</div>`;
                 }).join('');
                 list.scrollTop = list.scrollHeight;
             }
         }
 
         async function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const text = input.value;
-            if (!text) return;
-            input.value = '';
-            await _supabase.from('messages').insert([{ sender_id: myId, receiver_id: targetId, text: text, chat_id: currentChatId }]);
+            const i = document.getElementById('msg-input');
+            const val = i.value.trim();
+            if (!val) return;
+            let msgObj = { sender_id: myId, chat_id: currentChatId };
+            if (isImageUrl(val)) { msgObj.url_image = val; msgObj.text = ""; } else { msgObj.text = val; }
+            await _supabase.from('messages').insert([msgObj]);
+            i.value = '';
             loadMessages();
+            loadNews();
         }
 
-        function subscribe() {
-            _supabase.channel('room1').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${currentChatId}` }, () => loadMessages()).subscribe();
+        async function createGroup() {
+            const name = prompt("Название группы:");
+            if (name) { await _supabase.from('groups').insert([{ name: name }]); loadGroups(); }
         }
-
-        // Отправка по Enter
-        document.getElementById('msg-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
     </script>
 </body>
 </html>
